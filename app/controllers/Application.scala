@@ -1,17 +1,21 @@
 package controllers
 
-import com.github.macpersia.planty_jira_view.{Config, ReportGenerator, WorklogEntry}
-import org.joda.time.LocalDate
-import play.api.Play.current
-import play.api.data.Forms._
-import play.api.data._
-import play.api.i18n.Messages.Implicits._
+import java.net.URI
+
+import com.github.macpersia.planty_jira_view.{ConnectionConfig, WorklogEntry, WorklogFilter, WorklogReporter}
+import org.joda.time.{DateTime, LocalDate}
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc._
 
-case class ConfigParams(baseUrl: String, username: String, password: String, jiraQuery: String,
-                         fromDate: LocalDate, toDate: LocalDate)
+case class ReportParams(
+                         baseUrl: String,
+                         username: String,
+                         password: String,
+                         jiraQuery: String,
+                         author: Option[String],
+                         fromDate: LocalDate,
+                         toDate: LocalDate)
 
 class Application extends Controller {
 
@@ -24,34 +28,55 @@ class Application extends Controller {
   }
 
 /*
-  val configForm = Form(
+  val paramsForm = Form(
     mapping(
       "baseUrl" -> nonEmptyText,
       "username" -> nonEmptyText,
       "password" -> nonEmptyText,
       "jiraQuery" -> text,
+      "author" -> text,
       "fromDate" -> jodaLocalDate,
       "toDate" -> jodaLocalDate
-    )(ConfigParams.apply)(ConfigParams.unapply)
+    )(ReportParams.apply)(ReportParams.unapply)
   )
 
   def worklogs = Action {
-    Ok(views.html.worklogs(configForm))
+    Ok(views.html.worklogs(paramsForm))
   }
 */
 
-  def initialConfig = Action {
-    Ok(Json.toJson(Config()))
+  def initParams = Action {
+    Ok(Json.toJson(new ReportParams(
+      "https://jira02.jirahosting.de/jira", null, null,
+      "project = BICM AND labels = 2015 AND labels IN ('#7', '#8') AND summary ~ 'Project Management'",
+      None,
+      new DateTime minusWeeks 1 toLocalDate,
+      new DateTime plusDays 1 toLocalDate
+    )))
   }
 
+  def extractConnectionConfig(params: ReportParams): ConnectionConfig =
+    ConnectionConfig(new URI(params.baseUrl), params.username, params.password)
+
+  def extractWorklogFilter(params: ReportParams): WorklogFilter =
+    WorklogFilter(params.jiraQuery, params.author, params.fromDate, params.toDate)
+  
+  def constructReportParams(connConfig: ConnectionConfig, filter: WorklogFilter) =
+    ReportParams(
+      connConfig.baseUri.toString, connConfig.username, connConfig.password,
+      filter.jiraQuery, filter.author, filter.fromDate, filter.toDate)
+
   def retrieveWorklogs = Action(BodyParsers.parse.json) { request =>
-    val configResult = request.body.validate[Config]
-    configResult.fold(
+    val paramsResult = request.body.validate[ReportParams]
+    paramsResult.fold(
       errors => {
         BadRequest(Json.obj("status" -> JsString("KO"), "message" -> JsError.toJson(errors)))
       },
-      config => {
-        val entries = new ReportGenerator(config).generateEntries()
+      params => {
+        val entries = new WorklogReporter(
+          extractConnectionConfig(params),
+          extractWorklogFilter(params)
+        ).retrieveWorklogs()
         // Ok(Json.toJson(entries)
         Ok(Json.obj("status" -> JsString("OK"), "entries" -> entries))
       })
@@ -59,45 +84,42 @@ class Application extends Controller {
 
 /*
   def retrieveWorklogs = Action { implicit request =>
-    configForm.bindFromRequest.fold(
+    paramsForm.bindFromRequest.fold(
       formWithErrors => {
         // binding failure, you retrieve the form containing errors:
         BadRequest(views.html.worklogs(formWithErrors))
       },
       params => {
-        /* binding success, you get the actual value. */
-        val config = Config(params.baseUrl, params.username, params.password, params.jiraQuery, params.fromDate, params.toDate)
-        val entries = new ReportGenerator(config).generateEntries()
+        // binding success, you get the actual value.
+        val entries = new WorklogReporter(extractConnectionConfig(params), extractWorklogFilter(params)).retrieveWorklogs()
         Ok(Json.obj("status" -> JsString("OK"), "entries" -> entries))
       }
     )
   }
 */
-
   implicit val worklogWrites: Writes[WorklogEntry] = (
     (JsPath \ "date").write[LocalDate] and
     (JsPath \ "description").write[String] and
     (JsPath \ "duration").write[Double]
   )(unlift(WorklogEntry.unapply))
 
-  implicit val configWrites: Writes[Config] = (
+  implicit val paramWrites: Writes[ReportParams] = (
     (JsPath \ "baseUrl").write[String] and
     (JsPath \ "username").write[String] and
     (JsPath \ "password").write[String] and
     (JsPath \ "jiraQuery").write[String] and
+    (JsPath \ "author").writeNullable[String] and
     (JsPath \ "fromDate").write[LocalDate] and
     (JsPath \ "toDate").write[LocalDate]
-  )(unlift({ (config: Config) => Some(config.baseUrl, config.username, config.password, config.jiraQuery,
-                                      config.fromDate, config.toDate) }))
+  )(unlift(ReportParams.unapply))
 
-  implicit val configReads: Reads[Config] = (
+  implicit val paramsReads: Reads[ReportParams] = (
     (JsPath \ "baseUrl").read[String] and
     (JsPath \ "username").read[String] and
     (JsPath \ "password").read[String] and
     (JsPath \ "jiraQuery").read[String] and
+    (JsPath \ "author").readNullable[String] and
     (JsPath \ "fromDate").read[LocalDate] and
     (JsPath \ "toDate").read[LocalDate]
-  )({ (baseUrl, username, password, jiraQuery, fromDate, toDate) =>
-          Config(baseUrl = baseUrl, username = username, password = password, jiraQuery = jiraQuery,
-                 fromDate = fromDate, toDate = toDate) })
+  )(ReportParams.apply _)
 }

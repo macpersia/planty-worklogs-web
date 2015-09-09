@@ -4,7 +4,7 @@
 
 # Home page
 GET     / 			    controllers.Application.index
-GET     /initConfig     controllers.Application.initialConfig
+GET     /initParams     controllers.Application.initParams
 
 # Worklogs
 GET 	/worklogs		controllers.Application.worklogs

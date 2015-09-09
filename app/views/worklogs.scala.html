@@ -1,7 +1,7 @@
 @* worklogs Template File *@
-@* @(configForm: Form[ConfigParams])(implicit messages: Messages) *@
+@* @(paramsForm: Form[ReportParams])(implicit messages: Messages) *@
 
-@* @(config: Config) *@
+@* @(params: ReportParams) *@
 
 @import helper._
 
@@ -35,42 +35,42 @@
 </head>
 <body ng-app="planty-jira-ng">
 <div class="container">
-    <form id="queryForm" ng-controller="configController">
+    <form id="queryForm" ng-controller="reportParamsController">
         <div class="row">
             <h3>Connection Config</h3>
             <div class="col-md-8">
                 <div class="form-group">
                     <label class="col-sm-2 control-label">Base URL</label>
                     <div class="col-sm-10">
-                        <input type="url" ng-model="config.baseUrl" name="baseUrl" class="form-control">
+                        <input type="url" ng-model="reportParams.baseUrl" name="baseUrl" class="form-control">
                         <span class="help-block">Required</span>
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="col-sm-2 control-label">Username</label>
                     <div class="col-sm-4">
-                        <input type="text" ng-model="config.username" name="username" class="form-control">
+                        <input type="text" ng-model="reportParams.username" name="username" class="form-control">
                         <span class="help-block">Required</span>
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="col-sm-2 control-label">Password</label>
                     <div class="col-sm-4">
-                        <input type="password" ng-model="config.password" name="password" class="form-control">
+                        <input type="password" ng-model="reportParams.password" name="password" class="form-control">
                         <span class="help-block">Required</span>
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="col-sm-2 control-label">From</label>
                     <div class="col-sm-4">
-                        <input type="text" ng-model="config.fromDate" name="fromDate" class="form-control">
+                        <input type="text" ng-model="reportParams.fromDate" name="fromDate" class="form-control">
                         <span class="help-block">Date ('yyyy-MM-dd')</span>
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="col-sm-2 control-label">To</label>
                     <div class="col-sm-4">
-                        <input type="text" ng-model="config.toDate" name="toDate" class="form-control">
+                        <input type="text" ng-model="reportParams.toDate" name="toDate" class="form-control">
                         <span class="help-block">Date ('yyyy-MM-dd')</span>
                     </div>
                 </div>
@@ -81,12 +81,20 @@
             <div class="form-group">
                 <div class="col-md-8">
                     <div class="col-sm-12">
-                        <input type="text" ng-model="config.jiraQuery" name="jiraQuery" class="form-control">
+                        <input type="text" ng-model="reportParams.jiraQuery" name="jiraQuery" class="form-control">
                         <span class="help-block">&nbsp;</span>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">Author's Username</label>
+                        <div class="col-sm-4">
+                            <input type="text" ng-model="reportParams.author" name="author" class="form-control"
+                                   placeholder="{{reportParams.username}}">
+                            <span class="help-block">Optional</span>
+                        </div>
                     </div>
                     <div class="actions">
                         @*<input type="submit" value="Retrieve Worklogs" id="querySubmit" class="btn btn-primary">*@
-                        <button class="btn btn-primary has-spinner" ng-click="submitConfig($event)" ng-disabled="error || incomplete">
+                        <button class="btn btn-primary has-spinner" ng-click="submitParams($event)" ng-disabled="error || incomplete">
                             <span class="glyphicon glyphicon-search"></span>
                             &nbsp; Retrieve Worklogs &nbsp;
                             <span class="spinner"><i class="glyphicon glyphicon-refresh spinning"></i></span>
@@ -128,20 +136,20 @@
 <script type="text/javascript">
 
     var app = angular.module('planty-jira-ng', []);
-    app.controller('configController', function($scope, $http) {
-        $http.get("/initConfig").success(function(response) {
-            $scope.config = response;
+    app.controller('reportParamsController', function($scope, $http) {
+        $http.get("/initParams").success(function(response) {
+            $scope.reportParams = response;
         });
-        $scope.submitConfig = function(e) {
-            angular.element($('#worklogsTable')).scope().retrieveWorklogs(e, $scope.config);
+        $scope.submitParams = function(e) {
+            angular.element($('#worklogsTable')).scope().retrieveWorklogs(e, $scope.reportParams);
         };
     });
     app.controller('worklogsController', function($scope, $http) {
         $scope.worklogs = [];
-        $scope.retrieveWorklogs = function(e, config) {
+        $scope.retrieveWorklogs = function(e, reportParams) {
             $(e.target).toggleClass('active');
 
-            $http.post('/worklogs', config, {})
+            $http.post('/worklogs', reportParams, {})
             .then(function(response) {
                 $scope.worklogs = response.data.entries;
                 $(e.target).toggleClass('active');
