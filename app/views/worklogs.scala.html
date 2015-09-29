@@ -122,7 +122,8 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="2">Total:</td>
+                        <td></td>
+                        <td>Total:</td>
                         <td>{{ calcTotalDuration() }}</td>
                     </tr>
                 </tfoot>
@@ -167,7 +168,7 @@
         $scope.calcTotalDuration = function() {
             var total = 0;
             for(var i = 0; i < $scope.worklogs.length; i++){
-                total += worklogs.duration;
+                total += worklogs[i].duration;
             }
             return total;
         }
