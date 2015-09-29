@@ -120,6 +120,12 @@
                         <td>{{worklog.duration}}</td>
                     </tr>
                 </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2">Total:</td>
+                        <td>{{ calcTotalDuration() }}</td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>
@@ -158,6 +164,13 @@
                 $(e.target).toggleClass('active');
             });
         };
+        $scope.calcTotalDuration = function() {
+            var total = 0;
+            for(var i = 0; i < $scope.worklogs.length; i++){
+                total += worklogs.duration;
+            }
+            return total;
+        }
     });
 
 </script>
