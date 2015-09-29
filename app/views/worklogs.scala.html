@@ -168,7 +168,7 @@
         $scope.calcTotalDuration = function() {
             var total = 0;
             for(var i = 0; i < $scope.worklogs.length; i++){
-                total += worklogs[i].duration;
+                total += $scope.worklogs[i].duration;
             }
             return total;
         }
