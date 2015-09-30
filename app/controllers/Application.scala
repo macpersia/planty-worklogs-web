@@ -67,7 +67,7 @@ class Application extends Controller {
   }
   
   def constructReportParams(connConfig: ConnectionConfig, filter: WorklogFilter) = {
-    val tzOffsetMillis    = filter.timeZone.getOffset(filter.fromDate.toDate)
+    val tzOffsetMillis    = filter.timeZone.getOffset(filter.fromDate.toDate.getTime)
     val tzOffsetMinutes   = tzOffsetMillis / 60 / 1000 / (-1)
     ReportParams(
       connConfig.baseUri.toString, connConfig.username, connConfig.password,
