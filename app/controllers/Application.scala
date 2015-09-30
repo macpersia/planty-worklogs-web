@@ -1,10 +1,9 @@
 package controllers
 
 import java.net.URI
-import java.util.TimeZone
 
 import com.github.macpersia.planty_jira_view.{ConnectionConfig, WorklogEntry, WorklogFilter, WorklogReporter}
-import org.joda.time.{DateTimeZone, DateTime, LocalDate}
+import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc._
@@ -61,13 +60,19 @@ class Application extends Controller {
   def extractConnectionConfig(params: ReportParams): ConnectionConfig =
     ConnectionConfig(new URI(params.baseUrl), params.username, params.password)
 
-  def extractWorklogFilter(params: ReportParams): WorklogFilter =
-    WorklogFilter(params.jiraQuery, params.author, params.fromDate, params.toDate, DateTimeZone.forOffsetMillis(params.tzOffsetMinutes * 60 * 1000).toTimeZone)
+  def extractWorklogFilter(params: ReportParams): WorklogFilter = {
+    val tzOffsetMillis  = (-1) * params.tzOffsetMinutes * 60 * 1000
+    val timeZone        = DateTimeZone.forOffsetMillis(tzOffsetMillis).toTimeZone
+    WorklogFilter(params.jiraQuery, params.author, params.fromDate, params.toDate, timeZone)
+  }
   
-  def constructReportParams(connConfig: ConnectionConfig, filter: WorklogFilter) =
+  def constructReportParams(connConfig: ConnectionConfig, filter: WorklogFilter) = {
+    val tzOffsetMillis    = filter.timeZone.getOffset(filter.fromDate.toDate)
+    val tzOffsetMinutes   = tzOffsetMillis / 60 / 1000 / (-1)
     ReportParams(
       connConfig.baseUri.toString, connConfig.username, connConfig.password,
-      filter.jiraQuery, filter.author, filter.fromDate, filter.toDate, filter.timeZone.getRawOffset() / 60 / 1000)
+      filter.jiraQuery, filter.author, filter.fromDate, filter.toDate, tzOffsetMinutes)
+  }
 
   def retrieveWorklogs = Action(BodyParsers.parse.json) { request =>
     val paramsResult = request.body.validate[ReportParams]
