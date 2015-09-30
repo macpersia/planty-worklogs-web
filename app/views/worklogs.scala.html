@@ -146,6 +146,7 @@
     app.controller('reportParamsController', function($scope, $http) {
         $http.get("/initParams").success(function(response) {
             $scope.reportParams = response;
+            $scope.reportParams.tzOffsetMinutes = new Date().getTimezoneOffset();
         });
         $scope.submitParams = function(e) {
             angular.element($('#worklogsTable')).scope().retrieveWorklogs(e, $scope.reportParams);

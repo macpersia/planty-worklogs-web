@@ -1,9 +1,10 @@
 package controllers
 
 import java.net.URI
+import java.util.TimeZone
 
 import com.github.macpersia.planty_jira_view.{ConnectionConfig, WorklogEntry, WorklogFilter, WorklogReporter}
-import org.joda.time.{DateTime, LocalDate}
+import org.joda.time.{DateTimeZone, DateTime, LocalDate}
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc._
@@ -15,7 +16,8 @@ case class ReportParams(
                          jiraQuery: String,
                          author: Option[String],
                          fromDate: LocalDate,
-                         toDate: LocalDate)
+                         toDate: LocalDate,
+                         tzOffsetMinutes: Int)
 
 class Application extends Controller {
 
@@ -51,7 +53,8 @@ class Application extends Controller {
       "project = BICM AND labels = 2015 AND labels IN ('#7', '#8') AND summary ~ 'Project Management'",
       None,
       new DateTime minusWeeks 1 toLocalDate,
-      new DateTime plusDays 1 toLocalDate
+      new DateTime plusDays 1 toLocalDate,
+      0
     )))
   }
 
@@ -59,12 +62,12 @@ class Application extends Controller {
     ConnectionConfig(new URI(params.baseUrl), params.username, params.password)
 
   def extractWorklogFilter(params: ReportParams): WorklogFilter =
-    WorklogFilter(params.jiraQuery, params.author, params.fromDate, params.toDate)
+    WorklogFilter(params.jiraQuery, params.author, params.fromDate, params.toDate, DateTimeZone.forOffsetMillis(params.tzOffsetMinutes * 60 * 1000).toTimeZone)
   
   def constructReportParams(connConfig: ConnectionConfig, filter: WorklogFilter) =
     ReportParams(
       connConfig.baseUri.toString, connConfig.username, connConfig.password,
-      filter.jiraQuery, filter.author, filter.fromDate, filter.toDate)
+      filter.jiraQuery, filter.author, filter.fromDate, filter.toDate, filter.timeZone.getRawOffset() / 60 / 1000)
 
   def retrieveWorklogs = Action(BodyParsers.parse.json) { request =>
     val paramsResult = request.body.validate[ReportParams]
@@ -110,7 +113,8 @@ class Application extends Controller {
     (JsPath \ "jiraQuery").write[String] and
     (JsPath \ "author").writeNullable[String] and
     (JsPath \ "fromDate").write[LocalDate] and
-    (JsPath \ "toDate").write[LocalDate]
+    (JsPath \ "toDate").write[LocalDate] and
+    (JsPath \ "tzOffsetMinutes").write[Int]
   )(unlift(ReportParams.unapply))
 
   implicit val paramsReads: Reads[ReportParams] = (
@@ -120,6 +124,7 @@ class Application extends Controller {
     (JsPath \ "jiraQuery").read[String] and
     (JsPath \ "author").readNullable[String] and
     (JsPath \ "fromDate").read[LocalDate] and
-    (JsPath \ "toDate").read[LocalDate]
+    (JsPath \ "toDate").read[LocalDate] and
+    (JsPath \ "tzOffsetMinutes").read[Int]
   )(ReportParams.apply _)
 }
