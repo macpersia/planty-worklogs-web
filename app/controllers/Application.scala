@@ -1,9 +1,10 @@
 package controllers
 
 import java.net.URI
+import java.time.{LocalDate, ZoneOffset, ZonedDateTime}
+import java.util.TimeZone
 
 import com.github.macpersia.planty_jira_view.{ConnectionConfig, WorklogEntry, WorklogFilter, WorklogReporter}
-import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc._
@@ -51,8 +52,8 @@ class Application extends Controller {
       "https://jira02.jirahosting.de/jira", null, null,
       "project = BICM AND labels = 2015 AND labels IN ('#7', '#8') AND summary ~ 'Project Management'",
       None,
-      new DateTime minusWeeks 1 toLocalDate,
-      new DateTime plusDays 1 toLocalDate,
+      ZonedDateTime.now minusWeeks 1 toLocalDate,
+      ZonedDateTime.now plusDays 1 toLocalDate,
       0
     )))
   }
@@ -61,14 +62,17 @@ class Application extends Controller {
     ConnectionConfig(new URI(params.baseUrl), params.username, params.password)
 
   def extractWorklogFilter(params: ReportParams): WorklogFilter = {
-    val tzOffsetMillis  = (-1) * params.tzOffsetMinutes * 60 * 1000
-    val timeZone        = DateTimeZone.forOffsetMillis(tzOffsetMillis).toTimeZone
+    val tzOffsetSeconds = (-1) * params.tzOffsetMinutes * 60
+    val timeZone        = TimeZone.getTimeZone(ZoneOffset.ofTotalSeconds(tzOffsetSeconds))
     WorklogFilter(params.jiraQuery, params.author, params.fromDate, params.toDate, timeZone)
   }
   
   def constructReportParams(connConfig: ConnectionConfig, filter: WorklogFilter) = {
-    val tzOffsetMillis    = filter.timeZone.getOffset(filter.fromDate.toDate.getTime)
-    val tzOffsetMinutes   = tzOffsetMillis / 60 / 1000 / (-1)
+    val timeZone            = filter.timeZone
+    val zoneId              = timeZone.toZoneId
+    val instantAtStartOfDay = filter.fromDate.atStartOfDay.atZone(zoneId).toInstant
+    val tzOffsetMillis      = timeZone.getOffset(instantAtStartOfDay.toEpochMilli)
+    val tzOffsetMinutes     = tzOffsetMillis / 60 / 1000 / (-1)
     ReportParams(
       connConfig.baseUri.toString, connConfig.username, connConfig.password,
       filter.jiraQuery, filter.author, filter.fromDate, filter.toDate, tzOffsetMinutes)
