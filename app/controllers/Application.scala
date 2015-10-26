@@ -52,8 +52,8 @@ class Application extends Controller {
       "https://jira02.jirahosting.de/jira", null, null,
       "project = BICM AND labels = 2015 AND labels IN ('#7', '#8') AND summary ~ 'Project Management'",
       None,
-      ZonedDateTime.now minusWeeks 1 toLocalDate,
-      ZonedDateTime.now plusDays 1 toLocalDate,
+      (ZonedDateTime.now minusWeeks 1).toLocalDate,
+      (ZonedDateTime.now plusDays 1).toLocalDate,
       0
     )))
   }

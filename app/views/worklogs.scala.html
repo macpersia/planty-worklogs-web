@@ -3,7 +3,7 @@
 
 @* @(params: ReportParams) *@
 
-@import helper._
+@import views.html.helper._
 
 <!DOCTYPE html>
 
@@ -12,7 +12,7 @@
     <title>Worklogs View</title>
     <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("stylesheets/main.css")'>
     <link rel="shortcut icon" type="image/png" href='@routes.Assets.versioned("images/favicon.png")'>
-    <script src='@routes.Assets.versioned("javascripts/hello.js")' type="text/javascript"></script>
+    @*<script src='@routes.Assets.versioned("javascripts/hello.js")' type="text/javascript"></script>*@
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.4/angular.min.js"></script>
 
     <!-- Latest compiled and minified CSS -->
@@ -140,42 +140,7 @@
 <!-- Latest compiled and minified JavaScript -->
 <script src='@routes.WebJarAssets.at(WebJarAssets.locate("bootswatch-united", "bootstrap.min.js"))'></script>
 
-<script type="text/javascript">
-
-    var app = angular.module('planty-jira-ng', []);
-    app.controller('reportParamsController', function($scope, $http) {
-        $http.get("/initParams").success(function(response) {
-            $scope.reportParams = response;
-            $scope.reportParams.tzOffsetMinutes = new Date().getTimezoneOffset();
-        });
-        $scope.submitParams = function(e) {
-            angular.element($('#worklogsTable')).scope().retrieveWorklogs(e, $scope.reportParams);
-        };
-    });
-    app.controller('worklogsController', function($scope, $http) {
-        $scope.worklogs = [];
-        $scope.retrieveWorklogs = function(e, reportParams) {
-            $(e.target).toggleClass('active');
-
-            $http.post('/worklogs', reportParams, {})
-            .then(function(response) {
-                $scope.worklogs = response.data.entries;
-                $(e.target).toggleClass('active');
-
-            }, function(response) {
-                $(e.target).toggleClass('active');
-            });
-        };
-        $scope.calcTotalDuration = function() {
-            var total = 0;
-            for(var i = 0; i < $scope.worklogs.length; i++){
-                total += $scope.worklogs[i].duration;
-            }
-            return total;
-        }
-    });
-
-</script>
+<script src='@routes.Assets.versioned("javascripts/app.js")' type="text/javascript"></script>
 
 </body>
 </html>
