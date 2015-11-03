@@ -8,6 +8,7 @@ import com.github.macpersia.planty_jira_view.{ConnectionConfig, WorklogEntry, Wo
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 case class ReportParams(
                          baseUrl: String,
