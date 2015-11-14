@@ -5,11 +5,10 @@ import java.time.{LocalDate, ZoneOffset, ZonedDateTime}
 import java.util.TimeZone
 
 import com.github.macpersia.planty_jira_view.{ConnectionConfig, WorklogEntry, WorklogFilter, WorklogReporter}
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc._
-
-import play.api.libs.concurrent.Execution.Implicits._
 
 case class ReportParams(
                          baseUrl: String,
@@ -52,7 +51,8 @@ class Application extends Controller {
   def initParams = Action {
     Ok(Json.toJson(new ReportParams(
       "https://jira02.jirahosting.de/jira", null, null,
-      "project = BICM AND labels = 2015 AND labels IN ('#7', '#8') AND summary ~ 'Project Management'",
+      // "project = BICM AND labels = 2015 AND labels IN ('#7', '#8') AND summary ~ 'Project Management'",
+      "project = BICM",
       None,
       (ZonedDateTime.now minusWeeks 1).toLocalDate,
       (ZonedDateTime.now plusDays 1).toLocalDate,
