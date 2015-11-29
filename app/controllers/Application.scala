@@ -9,16 +9,20 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc._
+import resource._
 
-case class ReportParams(
-                         baseUrl: String,
-                         username: String,
-                         password: String,
-                         jiraQuery: String,
-                         author: Option[String],
-                         fromDate: LocalDate,
-                         toDate: LocalDate,
-                         tzOffsetMinutes: Int)
+import play.api.Logger
+
+import scala.concurrent.ExecutionContext.Implicits._
+
+case class ReportParams(  baseUrl: String,
+                          username: String,
+                          password: String,
+                          jiraQuery: String,
+                          author: Option[String],
+                          fromDate: LocalDate,
+                          toDate: LocalDate,
+                          tzOffsetMinutes: Int )
 
 class Application extends Controller {
 
@@ -87,12 +91,19 @@ class Application extends Controller {
         BadRequest(Json.obj("status" -> JsString("KO"), "message" -> JsError.toJson(errors)))
       },
       params => {
-        val entries = new WorklogReporter(
+        managed(new WorklogReporter(
           extractConnectionConfig(params),
           extractWorklogFilter(params)
-        ).retrieveWorklogs()
-        // Ok(Json.toJson(entries)
-        Ok(Json.obj("status" -> JsString("OK"), "entries" -> entries))
+        ))
+        .map(reporter => {
+          val entries = reporter.retrieveWorklogs()
+          // Ok(Json.toJson(entries)
+          Ok(Json.obj("status" -> JsString("OK"), "entries" -> entries))
+        }).either match {
+          case Left(errors) =>
+            BadRequest(Json.obj("status" -> JsString("KO"), "message" -> errors.head.toString))
+          case Right(result) => result
+        }
       })
   }
 
