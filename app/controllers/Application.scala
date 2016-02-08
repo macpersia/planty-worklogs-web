@@ -17,14 +17,14 @@ import play.api.Logger
 
 import scala.concurrent.ExecutionContext.Implicits._
 
-case class ReportParams(  baseUrl: String,
-                          username: String,
-                          password: String,
-                          jiraQuery: String,
-                          author: Option[String],
-                          fromDate: LocalDate,
-                          toDate: LocalDate,
-                          tzOffsetMinutes: Int )
+case class JiraReportParams( baseUrl: String,
+                             username: String,
+                             password: String,
+                             jiraQuery: String,
+                             author: Option[String],
+                             fromDate: LocalDate,
+                             toDate: LocalDate,
+                             tzOffsetMinutes: Int )
 
 class Application extends Controller {
 
@@ -55,7 +55,7 @@ class Application extends Controller {
 */
 
   def initParams = Action {
-    Ok(Json.toJson(new ReportParams(
+    Ok(Json.toJson(new JiraReportParams(
       "https://jira02.jirahosting.de/jira", null, null,
       // "project = BICM AND labels = 2015 AND labels IN ('#7', '#8') AND summary ~ 'Project Management'",
       "project = BICM",
@@ -66,10 +66,10 @@ class Application extends Controller {
     )))
   }
 
-  def extractConnectionConfig(params: ReportParams): ConnectionConfig =
+  def extractConnectionConfig(params: JiraReportParams): ConnectionConfig =
     ConnectionConfig(new URI(params.baseUrl), params.username, params.password)
 
-  def extractWorklogFilter(params: ReportParams): JiraWorklogFilter = {
+  def extractWorklogFilter(params: JiraReportParams): JiraWorklogFilter = {
     val tzOffsetSeconds = (-1) * params.tzOffsetMinutes * 60
     val timeZone        = TimeZone.getTimeZone(ZoneOffset.ofTotalSeconds(tzOffsetSeconds))
     new JiraWorklogFilter(params.author, params.fromDate, params.toDate, timeZone, params.jiraQuery)
@@ -81,13 +81,13 @@ class Application extends Controller {
     val instantAtStartOfDay = filter.fromDate.atStartOfDay.atZone(zoneId).toInstant
     val tzOffsetMillis      = timeZone.getOffset(instantAtStartOfDay.toEpochMilli)
     val tzOffsetMinutes     = tzOffsetMillis / 60 / 1000 / (-1)
-    ReportParams(
+    JiraReportParams(
       connConfig.baseUri.toString, connConfig.username, connConfig.password,
       filter.jiraQuery, filter.author, filter.fromDate, filter.toDate, tzOffsetMinutes)
   }
 
   def retrieveWorklogs = Action(BodyParsers.parse.json) { request =>
-    val paramsResult = request.body.validate[ReportParams]
+    val paramsResult = request.body.validate[JiraReportParams]
     paramsResult.fold(
       errors => {
         BadRequest(Json.obj("status" -> JsString("KO"), "message" -> JsError.toJson(errors)))
@@ -130,7 +130,7 @@ class Application extends Controller {
     (JsPath \ "duration").write[Double]
   )(unlift(WorklogEntry.unapply))
 
-  implicit val paramWrites: Writes[ReportParams] = (
+  implicit val paramWrites: Writes[JiraReportParams] = (
     (JsPath \ "baseUrl").write[String] and
     (JsPath \ "username").write[String] and
     (JsPath \ "password").write[String] and
@@ -139,9 +139,9 @@ class Application extends Controller {
     (JsPath \ "fromDate").write[LocalDate] and
     (JsPath \ "toDate").write[LocalDate] and
     (JsPath \ "tzOffsetMinutes").write[Int]
-  )(unlift(ReportParams.unapply))
+  )(unlift(JiraReportParams.unapply))
 
-  implicit val paramsReads: Reads[ReportParams] = (
+  implicit val paramsReads: Reads[JiraReportParams] = (
     (JsPath \ "baseUrl").read[String] and
     (JsPath \ "username").read[String] and
     (JsPath \ "password").read[String] and
@@ -150,5 +150,5 @@ class Application extends Controller {
     (JsPath \ "fromDate").read[LocalDate] and
     (JsPath \ "toDate").read[LocalDate] and
     (JsPath \ "tzOffsetMinutes").read[Int]
-  )(ReportParams.apply _)
+  )(JiraReportParams.apply _)
 }
