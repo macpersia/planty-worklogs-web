@@ -1,4 +1,4 @@
-var app = angular.module('planty-jira-ng', []);
+var app = angular.module('planty-worklogs-ng', []);
 app.controller('reportParamsController', function($scope, $http) {
     $http.get("/initParams").success(function(response) {
         $scope.reportParams = response;

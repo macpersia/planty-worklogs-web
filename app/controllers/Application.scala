@@ -4,7 +4,9 @@ import java.net.URI
 import java.time.{LocalDate, ZoneOffset, ZonedDateTime}
 import java.util.TimeZone
 
-import com.github.macpersia.planty_jira_view.{ConnectionConfig, WorklogEntry, WorklogFilter, WorklogReporter}
+import com.github.macpersia.planty.views.jira.model.JiraWorklogFilter
+import com.github.macpersia.planty.views.jira.{ConnectionConfig, WorklogReporter}
+import com.github.macpersia.planty.worklogs.model.{WorklogEntry, WorklogFilter}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
@@ -67,13 +69,13 @@ class Application extends Controller {
   def extractConnectionConfig(params: ReportParams): ConnectionConfig =
     ConnectionConfig(new URI(params.baseUrl), params.username, params.password)
 
-  def extractWorklogFilter(params: ReportParams): WorklogFilter = {
+  def extractWorklogFilter(params: ReportParams): JiraWorklogFilter = {
     val tzOffsetSeconds = (-1) * params.tzOffsetMinutes * 60
     val timeZone        = TimeZone.getTimeZone(ZoneOffset.ofTotalSeconds(tzOffsetSeconds))
-    WorklogFilter(params.jiraQuery, params.author, params.fromDate, params.toDate, timeZone)
+    new JiraWorklogFilter(params.author, params.fromDate, params.toDate, timeZone, params.jiraQuery)
   }
   
-  def constructReportParams(connConfig: ConnectionConfig, filter: WorklogFilter) = {
+  def constructReportParams(connConfig: ConnectionConfig, filter: JiraWorklogFilter) = {
     val timeZone            = filter.timeZone
     val zoneId              = timeZone.toZoneId
     val instantAtStartOfDay = filter.fromDate.atStartOfDay.atZone(zoneId).toInstant

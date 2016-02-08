@@ -1,6 +1,6 @@
 import com.github.play2war.plugin._
 
-name := """planty-jira-web"""
+name := """planty-worklogs-web"""
 
 version := "1.0-SNAPSHOT"
 
@@ -8,7 +8,7 @@ Play2WarPlugin.play2WarSettings
 
 Play2WarKeys.servletVersion := "3.1"
 
-lazy val jiraWeb = (project in file(".")).enablePlugins(PlayScala)
+lazy val worklogsWeb = (project in file(".")).enablePlugins(PlayScala)
 
 scalaVersion := "2.11.6"
 
@@ -18,6 +18,7 @@ libraryDependencies ++= Seq(
   ws,
   specs2 % Test,
   "default" %% "planty-jira-view" % "1.0-SNAPSHOT",
+  "default" %% "planty-cats-view" % "1.0-SNAPSHOT",
   "mysql" % "mysql-connector-java" % "5.1.18",
   "org.webjars" %% "webjars-play" % "2.4.0",
   "org.webjars" % "bootstrap" % "3.3.5",
