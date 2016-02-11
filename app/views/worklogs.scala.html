@@ -2,145 +2,197 @@
 @* @(paramsForm: Form[JiraReportParams])(implicit messages: Messages) *@
 
 @* @(params: JiraReportParams) *@
-
 @import views.html.helper._
 
 <!DOCTYPE html>
 
 <html lang="en">
-<head>
-    <title>Worklogs View</title>
-    <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("stylesheets/main.css")'>
-    <link rel="shortcut icon" type="image/png" href='@routes.Assets.versioned("images/favicon.png")'>
-    @*<script src='@routes.Assets.versioned("javascripts/hello.js")' type="text/javascript"></script>*@
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.4/angular.min.js"></script>
+    <head>
+        <title>Worklogs Synchronizer</title>
+        <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("stylesheets/main.css")'>
+        <link rel="shortcut icon" type="image/png" href='@routes.Assets.versioned("images/favicon.png")'>
+        @*<script src='@routes.Assets.versioned("javascripts/hello.js")' type="text/javascript"></script>*@
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.4/angular.min.js"></script>
 
-    <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" media="screen"
-          href='@routes.WebJarAssets.at(WebJarAssets.locate("bootswatch-united", "bootstrap.min.css"))'>
+            <!-- Latest compiled and minified CSS -->
+        <link rel="stylesheet" media="screen"
+        href='@routes.WebJarAssets.at(WebJarAssets.locate("bootswatch-united", "bootstrap.min.css"))'>
+        @* Optional theme *@
+        <link rel="stylesheet" media="screen"
+        href='@routes.WebJarAssets.at(WebJarAssets.locate("bootstrap", "bootstrap-theme.min.css"))'>
 
-    @* Optional theme *@
-    <link rel="stylesheet" media="screen"
-          href='@routes.WebJarAssets.at(WebJarAssets.locate("bootstrap", "bootstrap-theme.min.css"))'>
+        <link rel="shortcut icon" type="image/png" href='@routes.Assets.versioned("images/favicon.png")'>
 
-    <link rel="shortcut icon" type="image/png" href='@routes.Assets.versioned("images/favicon.png")'>
-
-    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!--[if lt IE 9]>
+            <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+            <!--[if lt IE 9]>
     <script src='@routes.WebJarAssets.at(WebJarAssets.locate("html5shiv.js"))'></script>
     <script src='@routes.WebJarAssets.at(WebJarAssets.locate("respond.min.js"))'></script>
-    <![endif]-->
-
-    <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'></script>
-</head>
-<body ng-app="planty-worklogs-ng">
-<div class="container">
-    <form id="queryForm" ng-controller="reportParamsController">
-        <div class="row">
-            <h3>Connection Config</h3>
-            <div class="col-md-8">
-                <div class="form-group">
-                    <label class="col-sm-2 control-label">Base URL</label>
-                    <div class="col-sm-10">
-                        <input type="url" ng-model="reportParams.baseUrl" name="baseUrl" class="form-control">
-                        <span class="help-block">Required</span>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="col-sm-2 control-label">Username</label>
-                    <div class="col-sm-4">
-                        <input type="text" ng-model="reportParams.username" name="username" class="form-control">
-                        <span class="help-block">Required</span>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="col-sm-2 control-label">Password</label>
-                    <div class="col-sm-4">
-                        <input type="password" ng-model="reportParams.password" name="password" class="form-control">
-                        <span class="help-block">Required</span>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="col-sm-2 control-label">From</label>
-                    <div class="col-sm-4">
-                        <input type="text" ng-model="reportParams.fromDate" name="fromDate" class="form-control">
-                        <span class="help-block">Date ('yyyy-MM-dd')</span>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="col-sm-2 control-label">To</label>
-                    <div class="col-sm-4">
-                        <input type="text" ng-model="reportParams.toDate" name="toDate" class="form-control">
-                        <span class="help-block">Date ('yyyy-MM-dd')</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <h3>JIRA Query String</h3>
-            <div class="form-group">
-                <div class="col-md-8">
-                    <div class="col-sm-12">
-                        <input type="text" ng-model="reportParams.jiraQuery" name="jiraQuery" class="form-control">
-                        <span class="help-block">&nbsp;</span>
-                    </div>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label">Author's Username</label>
-                        <div class="col-sm-4">
-                            <input type="text" ng-model="reportParams.author" name="author" class="form-control"
-                                   placeholder="{{reportParams.username}}">
-                            <span class="help-block">Optional</span>
+        <![endif]-->
+        <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'></script>
+    </head>
+    <body ng-app="planty-worklogs-ng">
+        <div class="container">
+            <form id="queryForm" ng-controller="reportParamsController">
+                <div class="row">
+                    <h3>Date Criteria</h3>
+                    <div class="col-sm-10" style="float: none">
+                        <div class="form-group">
+                            <label class="col-sm-1 control-label">From</label>
+                            <div class="col-sm-4">
+                                <input type="text" ng-model="reportParams.fromDate" name="fromDate" class="form-control">
+                                <span class="help-block">Date ('yyyy-MM-dd')</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-1 control-label">To</label>
+                            <div class="col-sm-4">
+                                <input type="text" ng-model="reportParams.toDate" name="toDate" class="form-control">
+                                <span class="help-block">Date ('yyyy-MM-dd')</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="actions">
-                        @*<input type="submit" value="Retrieve Worklogs" id="querySubmit" class="btn btn-primary">*@
-                        <button class="btn btn-primary has-spinner" ng-click="submitParams($event)" ng-disabled="error || incomplete">
-                            <span class="glyphicon glyphicon-search"></span>
-                            &nbsp; Retrieve Worklogs &nbsp;
-                            <span class="spinner"><i class="glyphicon glyphicon-refresh spinning"></i></span>
-                        </button>
+                </div>
+                <div style="background-color: lavender">
+                    <ul class="nav nav-tabs">
+                        <li class="active"><a href="#jiraPanel" data-toggle="tab" class="active">JIRA</a></li>
+                        <li><a href="#catsPanel" data-toggle="tab">CATS</a></li>
+                    </ul>
+                    <div class="row">&nbsp;</div>
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="jiraPanel">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="form-group">
+                                        <label class="col-sm-2 control-label">Base URL</label>
+                                        <div class="col-sm-10">
+                                            <input type="url" ng-model="reportParams.jiraParams.baseUrl" name="baseUrl" class="form-control">
+                                            <span class="help-block">Required</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-sm-2 control-label">Username</label>
+                                        <div class="col-sm-4">
+                                            <input type="text" ng-model="reportParams.jiraParams.username" name="username" class="form-control">
+                                            <span class="help-block">Required</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-sm-2 control-label">Password</label>
+                                        <div class="col-sm-4">
+                                            <input type="password" ng-model="reportParams.jiraParams.password" name="password" class="form-control">
+                                            <span class="help-block">Required</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-sm-2 control-label">JIRA Query String</label>
+                                        <div class="col-sm-10">
+                                            <input type="text" ng-model="reportParams.jiraParams.jiraQuery" name="jiraQuery" class="form-control">
+                                            <span class="help-block">&nbsp;</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-sm-2 control-label">Author's Username</label>
+                                        <div class="col-sm-4">
+                                            <input type="text" ng-model="reportParams.jiraParams.author" name="author" class="form-control"
+                                            placeholder="{{reportParams.jiraParams.username}}">
+                                            <span class="help-block">Optional</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="catsPanel">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="form-group">
+                                        <label class="col-sm-2 control-label">Base URL</label>
+                                        <div class="col-sm-10">
+                                            <input type="url" ng-model="reportParams.catsParams.baseUrl" name="baseUrl" class="form-control">
+                                            <span class="help-block">Required</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-sm-2 control-label">Username</label>
+                                        <div class="col-sm-4">
+                                            <input type="text" ng-model="reportParams.catsParams.username" name="username" class="form-control">
+                                            <span class="help-block">Required</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-sm-2 control-label">Password</label>
+                                        <div class="col-sm-4">
+                                            <input type="password" ng-model="reportParams.catsParams.password" name="password" class="form-control"
+                                                autocomplete="off">
+                                            <span class="help-block">Required</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                </div>
+                <div class="row" style="padding: 1em">
+                    @*<div class="col-sm-12">*@
+                        <div class="actions" align="center">
+                            @*<input type="submit" value="Retrieve Worklogs" id="querySubmit" class="btn btn-primary">*@
+                            <button class="btn btn-primary has-spinner" ng-click="submitParams($event)" ng-disabled="error || incomplete">
+                                <span class="glyphicon glyphicon-search"></span>
+                                    &nbsp; Retrieve Worklogs &nbsp;
+                                <span class="spinner"><i class="glyphicon glyphicon-refresh spinning"></i></span>
+                            </button>
+                        </div>
+                    @*</div>*@
+                </div>
+            </form>
+            <div class="row">
+                <h3>Query Result</h3>
+                <div class="col-sm-12">
+                    <table id="worklogsTable" ng-controller="worklogsController" class="table table-striped">
+                        <thead>
+                            <th class="col-sm-2">Date</th>
+                            <th class="col-sm-2">Task / Ticket</th>
+                            <th class="col-sm-1">&nbsp;</th>
+                            <th class="col-sm-2">Time logged in JIRA</th>
+                            <th class="col-sm-1">&nbsp;</th>
+                            <th class="col-sm-1">&nbsp;</th>
+                            <th class="col-sm-2">Time logged in CATS</th>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="match in matches">
+                                <td>{{match.date}}</td>
+                                <td>{{match.description}}</td>
+                                <td></td>
+                                <td>{{match.durationInJira}}</td>
+                                <td></td>
+                                <td></td>
+                                <td>{{match.durationInCats}}</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td></td>
+                                <td>Total:</td>
+                                <td></td>
+                                <td>{{ calcTotalDurationInJira() }}</td>
+                                <td></td>
+                                <td></td>
+                                <td>{{ calcTotalDurationInCats() }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
                 </div>
             </div>
         </div>
-    </form>
-    <div class="row">
-        <h3>Query Result</h3>
-        <div class="col-md-8">
-            <table id="worklogsTable" ng-controller="worklogsController" class="table table-striped">
-                <thead>
-                    <th>Date</th>
-                    <th>Description</th>
-                    <th>Duration</th>
-                </thead>
-                <tbody>
-                    <tr ng-repeat="worklog in worklogs">
-                        <td>{{worklog.date}}</td>
-                        <td>{{worklog.description}}</td>
-                        <td>{{worklog.duration}}</td>
-                    </tr>
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td></td>
-                        <td>Total:</td>
-                        <td>{{ calcTotalDuration() }}</td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-    </div>
-</div>
 
-<!-- Bootstrap core JavaScript
+            <!-- Bootstrap core JavaScript
  ================================================== -->
-<!-- Placed at the end of the document so the pages load faster -->
-<script src='@routes.WebJarAssets.at(WebJarAssets.locate("jquery.min.js"))'></script>
+            <!-- Placed at the end of the document so the pages load faster -->
+        <script src='@routes.WebJarAssets.at(WebJarAssets.locate("jquery.min.js"))'></script>
 
-<!-- Latest compiled and minified JavaScript -->
-<script src='@routes.WebJarAssets.at(WebJarAssets.locate("bootswatch-united", "bootstrap.min.js"))'></script>
+            <!-- Latest compiled and minified JavaScript -->
+        <script src='@routes.WebJarAssets.at(WebJarAssets.locate("bootswatch-united", "bootstrap.min.js"))'></script>
 
-<script src='@routes.Assets.versioned("javascripts/app.js")' type="text/javascript"></script>
+        <script src='@routes.Assets.versioned("javascripts/app.js")' type="text/javascript"></script>
 
-</body>
+    </body>
 </html>
