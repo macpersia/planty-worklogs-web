@@ -24,10 +24,15 @@ libraryDependencies ++= Seq(
   "org.webjars" % "bootstrap" % "3.3.5",
   "org.webjars" % "bootswatch-united" % "3.3.4+1",
   "org.webjars" % "html5shiv" % "3.7.0",
-  "org.webjars" % "respond" % "1.4.2"
+  "org.webjars" % "respond" % "1.4.2",
+  "com.kenshoo" %% "metrics-play" % "2.4.0_0.4.1",
+  "com.mohiva" %% "play-silhouette" % "3.0.0"
 )
 
-resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
+resolvers ++= Seq(
+  "Atlassian Releases" at "https://maven.atlassian.com/public/",
+  "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
+)
 
 // Play provides two styles of routers, one expects its actions to be injected, the
 // other, legacy style, accesses its actions statically.

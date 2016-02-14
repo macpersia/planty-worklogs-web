@@ -161,7 +161,10 @@
                             <tr ng-repeat="match in matches">
                                 <td>{{match.date}}</td>
                                 <td>{{match.description}}</td>
-                                <td></td>
+                                <td ng-switch on="match.durationInJira == match.durationInCats" style="font-size: larger">
+                                    <span ng-switch-when="true" class="text-success glyphicon glyphicon-ok-sign"></span>
+                                    <span ng-switch-default class="text-danger glyphicon glyphicon-exclamation-sign"></span>
+                                </td>
                                 <td>{{match.durationInJira}}</td>
                                 <td></td>
                                 <td></td>

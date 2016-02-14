@@ -121,6 +121,9 @@ class Application extends Controller {
         BadRequest(Json.obj("status" -> JsString("KO"), "message" -> JsError.toJson(errors)))
       },
       params => {
+        Logger.info("Retrieving worklogs for: {" +
+          s" jira-user: ${params.jiraParams.username}," +
+          s" cats-user: ${params.catsParams.username} }")
         val jiraReporterMR = managed(new JiraWorklogReporter(
           extractConnectionConfig(params.jiraParams),
           extractWorklogFilter(params)
