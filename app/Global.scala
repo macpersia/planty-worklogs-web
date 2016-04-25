@@ -31,3 +31,13 @@ object AccessLoggingFilter extends Filter {
     resultFuture
   }
 }
+
+import javax.inject.Inject
+
+import play.api.http.HttpFilters
+import play.filters.cors.CORSFilter
+
+class MyHttpFilters @Inject() (corsFilter: CORSFilter) extends HttpFilters {
+  // TODO: We shouldn't need this!
+  def filters = Seq(corsFilter)
+}

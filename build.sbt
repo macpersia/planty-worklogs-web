@@ -26,7 +26,8 @@ libraryDependencies ++= Seq(
   "org.webjars" % "html5shiv" % "3.7.0",
   "org.webjars" % "respond" % "1.4.2",
   "com.kenshoo" %% "metrics-play" % "2.4.0_0.4.1",
-  "com.mohiva" %% "play-silhouette" % "3.0.0"
+  "com.mohiva" %% "play-silhouette" % "3.0.0",
+  filters
 )
 
 resolvers ++= Seq(
