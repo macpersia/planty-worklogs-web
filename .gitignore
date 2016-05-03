@@ -9,3 +9,4 @@ target
 .sbtserver*
 .history
 /bin
+/access-log-*.gz
