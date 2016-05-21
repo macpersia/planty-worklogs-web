@@ -24,26 +24,26 @@ import play.api.Logger
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits._
 
-case class ReportParams( fromDate: LocalDate,
-                         toDate: LocalDate,
-                         tzOffsetMinutes: Int,
-                         jiraParams: JiraReportParams,
-                         catsParams: CatsReportParams )
+case class ReportParams(fromDate: LocalDate,
+                        toDate: LocalDate,
+                        tzOffsetMinutes: Int,
+                        jiraParams: JiraReportParams,
+                        catsParams: CatsReportParams)
 
-case class JiraReportParams( baseUrl: String,
-                             username: String,
-                             password: String,
-                             jiraQuery: String,
-                             author: Option[String] )
+case class JiraReportParams(baseUrl: String,
+                            username: String,
+                            password: String,
+                            jiraQuery: String,
+                            author: Option[String])
 
-case class CatsReportParams( baseUrl: Option[String],
-                             username: Option[String],
-                             password: Option[String] )
+case class CatsReportParams(baseUrl: Option[String],
+                            username: Option[String],
+                            password: Option[String])
 
-case class WorklogMatch( date: LocalDate,
-                         description: String,
-                         durationInJira: Option[Double],
-                         durationInCats: Option[Double] )
+case class WorklogMatch(date: LocalDate,
+                        description: String,
+                        durationInJira: Option[Double],
+                        durationInCats: Option[Double])
 
 class Application extends Controller {
 
@@ -149,7 +149,7 @@ class Application extends Controller {
       })
   }
 
-  val worklogComparator =  new Comparator[WorklogEntry] {
+  val worklogComparator = new Comparator[WorklogEntry] {
     def compare(w1: WorklogEntry, w2: WorklogEntry) = {
       Ordering[(Long, String)].compare(
         (w1.date.toEpochDay, w1.description),
@@ -207,66 +207,34 @@ class Application extends Controller {
       )
     }
   */
-  implicit val worklogWrites: Writes[WorklogEntry] = (
-    (JsPath \ "date").write[LocalDate] and
-    (JsPath \ "description").write[String] and
-    (JsPath \ "duration").write[Double]
-  ) (unlift(WorklogEntry.unapply))
 
-  implicit val worklogMatchWrites: Writes[WorklogMatch] = (
-    (JsPath \ "date").write[LocalDate] and
-    (JsPath \ "description").write[String] and
-    (JsPath \ "durationInJira").writeNullable[Double] and
-    (JsPath \ "durationInCats").writeNullable[Double]
-  ) (unlift(WorklogMatch.unapply))
+  implicit val worklogWrites = Json.writes[WorklogEntry]
 
-  implicit val jiraParamWrites: Writes[JiraReportParams] = (
-    (JsPath \ "baseUrl").write[String] and
-    (JsPath \ "username").write[String] and
-    (JsPath \ "password").write[String] and
-    (JsPath \ "jiraQuery").write[String] and
-    (JsPath \ "author").writeNullable[String] //and
-    //    (JsPath \ "fromDate").write[LocalDate] and
-    //    (JsPath \ "toDate").write[LocalDate] and
-    //    (JsPath \ "tzOffsetMinutes").write[Int]
-  ) (unlift(JiraReportParams.unapply))
+  implicit val worklogMatchWrites = Json.writes[WorklogMatch]
 
-  implicit val jiraParamsReads: Reads[JiraReportParams] = (
-    (JsPath \ "baseUrl").read[String] and
-    (JsPath \ "username").read[String] and
-    (JsPath \ "password").read[String] and
-    (JsPath \ "jiraQuery").read[String] and
-    (JsPath \ "author").readNullable[String] //and
+  implicit val jiraParamWrites = Json.writes[JiraReportParams]
+
+  implicit val jiraParamsReads = Json.reads[JiraReportParams]
+
+  implicit val catsParamWrites = Json.writes[CatsReportParams]
+
+  implicit val catsParamsReads = Json.reads[CatsReportParams]
+
+  //  implicit val paramWrites: Writes[ReportParams] = (
+  //    (JsPath \ "fromDate").write[LocalDate] and
+  //    (JsPath \ "toDate").write[LocalDate] and
+  //    (JsPath \ "tzOffsetMinutes").write[Int] and
+  //    (JsPath \ "jiraParams").write[JiraReportParams] and
+  //    (JsPath \ "catsParams").write[CatsReportParams]
+  //  ) (unlift(ReportParams.unapply))
+  implicit val paramWrites = Json.writes[ReportParams]
+
+  //  implicit val paramsReads: Reads[ReportParams] = (
   //    (JsPath \ "fromDate").read[LocalDate] and
   //    (JsPath \ "toDate").read[LocalDate] and
-  //    (JsPath \ "tzOffsetMinutes").read[Int]
-  ) (JiraReportParams.apply _)
-
-  implicit val catsParamWrites: Writes[CatsReportParams] = (
-    (JsPath \ "baseUrl").writeNullable[String] and
-    (JsPath \ "username").writeNullable[String] and
-    (JsPath \ "password").writeNullable[String]
-  ) (unlift(CatsReportParams.unapply))
-
-  implicit val catsParamsReads: Reads[CatsReportParams] = (
-    (JsPath \ "baseUrl").readNullable[String] and
-    (JsPath \ "username").readNullable[String] and
-    (JsPath \ "password").readNullable[String]
-  ) (CatsReportParams.apply _)
-
-  implicit val paramWrites: Writes[ReportParams] = (
-    (JsPath \ "fromDate").write[LocalDate] and
-    (JsPath \ "toDate").write[LocalDate] and
-    (JsPath \ "tzOffsetMinutes").write[Int] and
-    (JsPath \ "jiraParams").write[JiraReportParams] and
-    (JsPath \ "catsParams").write[CatsReportParams]
-  ) (unlift(ReportParams.unapply))
-
-  implicit val paramsReads: Reads[ReportParams] = (
-    (JsPath \ "fromDate").read[LocalDate] and
-    (JsPath \ "toDate").read[LocalDate] and
-    (JsPath \ "tzOffsetMinutes").read[Int] and
-    (JsPath \ "jiraParams").read[JiraReportParams] and
-    (JsPath \ "catsParams").read[CatsReportParams]
-  ) (ReportParams.apply _)
+  //    (JsPath \ "tzOffsetMinutes").read[Int] and
+  //    (JsPath \ "jiraParams").read[JiraReportParams] and
+  //    (JsPath \ "catsParams").read[CatsReportParams]
+  //  ) (ReportParams.apply _)
+  implicit val paramsReads = Json.reads[ReportParams]
 }
