@@ -3,18 +3,19 @@
 # ~~~~
 
 # Home page
-GET     / 		        controllers.Application.index
-GET     /initParams 	controllers.Application.initParams
+GET     / 		            controllers.Application.index
+GET     /initParams 	    controllers.Application.initParams
 
 # Worklogs
-GET     /worklogs 	    controllers.Application.worklogs
-POST    /worklogs 	    controllers.Application.retrieveWorklogs
+GET     /worklogs 	        controllers.Application.worklogs
+POST    /worklogs 	        controllers.Application.retrieveWorklogs
+PUT     /worklogHours       controllers.Application.updateWorklogHours
 
 # Map the static resources from the /public folder to the /assets URL path
-GET     /assets/*file 	controllers.Assets.versioned(path="/public", file: Asset)
+GET     /assets/*file 	    controllers.Assets.versioned(path="/public", file: Asset)
 
 # Map the webjar static assets to the /webjars URL
-GET     /webjars/*file 	controllers.WebJarAssets.at(file)
+GET     /webjars/*file 	    controllers.WebJarAssets.at(file)
 
 
-#GET     /admin/metrics      com.kenshoo.play.metrics.MetricsController.metrics
+#GET    /admin/metrics      com.kenshoo.play.metrics.MetricsController.metrics

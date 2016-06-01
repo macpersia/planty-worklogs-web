@@ -8,8 +8,7 @@ import java.util.{Comparator, TimeZone}
 import com.github.macpersia.planty.views.cats.CatsWorklogReporter
 import com.github.macpersia.planty.views.jira
 import com.github.macpersia.planty.views.cats
-import com.github.macpersia.planty.views.jira.JiraWorklogReporter
-
+import com.github.macpersia.planty.views.jira.{ConnectionConfig, JiraWorklogReporter}
 import com.github.macpersia.planty.views.jira.model.JiraWorklogFilter
 import com.github.macpersia.planty.worklogs.model.{WorklogEntry, WorklogFilter}
 import com.github.macpersia.planty.worklogs.WorklogReporting
@@ -18,7 +17,6 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc._
 import resource._
-
 import play.api.Logger
 
 import scala.collection.mutable
@@ -38,12 +36,18 @@ case class JiraReportParams(baseUrl: String,
 
 case class CatsReportParams(baseUrl: Option[String],
                             username: Option[String],
-                            password: Option[String])
+                            password: Option[String],
+                            catsQuery: Option[String])
 
 case class WorklogMatch(date: LocalDate,
                         description: String,
                         durationInJira: Option[Double],
                         durationInCats: Option[Double])
+
+case class JiraWorklogHoursUpdate(connConfig: ConnectionConfig,
+                                  issueKey: String,
+                                  date: LocalDate,
+                                  duration: Double)
 
 class Application extends Controller {
 
@@ -85,7 +89,7 @@ class Application extends Controller {
         None
       ),
       CatsReportParams(
-        Option("https://cats.arvato-systems.de/gui4cats-webapi"), None, None
+        Option("https://cats.arvato-systems.de/gui4cats-webapi"), None, None, Option("BICM")
       )
     )))
   }
@@ -139,13 +143,58 @@ class Application extends Controller {
             )))
         join(resources).map(reporters => {
           val jiraEntries = reporters(0).retrieveWorklogs()
-          val catsEntries = if (reporters.length > 1) reporters(1).retrieveWorklogs() else Nil
-          Ok(Json.obj("status" -> JsString("OK"), "matches" -> pairUp(jiraEntries, catsEntries)))
+          val catsEntries =
+            if (reporters.length < 2) Nil
+            else {
+              val catsEntries = reporters(1).retrieveWorklogs()
+              val catsQueryOpt = params.catsParams.catsQuery
+              if (catsQueryOpt.isDefined)
+                catsEntries.filter(ce => ce.description.startsWith(catsQueryOpt.get))
+              else
+                catsEntries
+            }
+          Ok(Json.obj(
+            "status" -> JsString("OK"),
+            "matches" -> pairUp(
+              jiraEntries,
+              catsEntries
+          )))
         }).either match {
           case Left(errors) =>
             BadRequest(Json.obj("status" -> JsString("KO"), "message" -> errors.head.toString))
           case Right(result) => result
         }
+      })
+  }
+
+  def updateWorklogHours  = Action(BodyParsers.parse.json) { request =>
+    val paramsResult = request.body.validate[JiraWorklogHoursUpdate]
+    paramsResult.fold(
+      errors => {
+        BadRequest(Json.obj("status" -> JsString("KO"), "message" -> JsError.toJson(errors)))
+      },
+      params => {
+        Logger.info("Updating JIRA worklog: {" +
+          s" issueKey: ${params.issueKey}," +
+          s" date: ${params.date}," +
+          s" duration: ${params.duration} }" +
+          s" connConfig: ${params.connConfig} }")
+        val jiraReporterMR = managed(new JiraWorklogReporter(
+          params.connConfig,
+          // TODO: The following dummy value shoud not be passed!
+          JiraWorklogFilter(None, LocalDate.now(), LocalDate.now, TimeZone.getDefault, "")
+        ))
+        for(jiraReporter <- jiraReporterMR) {
+//          val jiraEntries = reporters(0).retrieveWorklogs()
+//          Ok(Json.obj("status" -> JsString("OK"), "matches" -> pairUp(jiraEntries, null)))
+          jiraReporter.updateWorklogHours(params.issueKey, params.date, params.duration)
+//
+//        } match {
+//          case Left(errors) =>
+//            BadRequest(Json.obj("status" -> JsString("KO"), "message" -> /*errors.head.toString*/ "blabla"))
+//          case Right(result) => result
+        }
+        Ok(Json.obj("status" -> JsString("OK")))
       })
   }
 
@@ -159,13 +208,12 @@ class Application extends Controller {
   }
 
   def pairUp(jiraEntries: Seq[WorklogEntry], catsEntries: Seq[WorklogEntry]): Seq[WorklogMatch] = {
-    val filteredCatsEntries = catsEntries.filter(ce => ce.description.startsWith("BICM"))
     var matches = mutable.Seq[WorklogMatch]()
     var i = 0;
     var j = 0;
-    while (i < jiraEntries.length && j < filteredCatsEntries.length) {
+    while (i < jiraEntries.length && j < catsEntries.length) {
       val je = jiraEntries(i)
-      val ce = filteredCatsEntries(j)
+      val ce = catsEntries(j)
       val comparison = worklogComparator.compare(je, ce)
       if (comparison == 0) {
         matches = matches.:+(WorklogMatch(je.date, je.description, Option(je.duration), Option(ce.duration)))
@@ -184,9 +232,9 @@ class Application extends Controller {
         val je = jiraEntries(n)
         matches = matches :+ WorklogMatch(je.date, je.description, Option(je.duration), None)
       }
-    else if (j < filteredCatsEntries.length)
-      for (n <- j until filteredCatsEntries.length) {
-        val ce = filteredCatsEntries(n)
+    else if (j < catsEntries.length)
+      for (n <- j until catsEntries.length) {
+        val ce = catsEntries(n)
         matches = matches :+ WorklogMatch(ce.date, ce.description, None, Option(ce.duration))
       }
     return matches
@@ -219,6 +267,29 @@ class Application extends Controller {
   implicit val catsParamWrites = Json.writes[CatsReportParams]
 
   implicit val catsParamsReads = Json.reads[CatsReportParams]
+
+  implicit val javaUriReads = Reads[URI](js =>
+    js.validate[String].map[URI]
+      (dtString => URI.create(dtString))
+  )
+
+//  implicit val javaUriWrite = Writes[URI](uri =>
+//    JsString(uri.toString())
+//  )
+
+  implicit val jiraConnConfigReads = Json.reads[ConnectionConfig]
+
+  //  implicit val jiraConnConfigWrite = Json.writes[ConnectionConfig]
+
+  //  implicit val jiraWorklogHoursUpdateReads = Json.reads[JiraWorklogHoursUpdate]
+  implicit val jiraWorklogHoursUpdateReads: Reads[JiraWorklogHoursUpdate] = (
+      (JsPath \ "connConfig").read[ConnectionConfig] and
+      (JsPath \ "key").read[String] and
+      (JsPath \ "date").read[LocalDate] and
+      (JsPath \ "duration").read[Double]
+  ) (JiraWorklogHoursUpdate.apply _)
+
+  //  implicit val jiraWorklogHoursUpdateWrites = Json.writes[JiraWorklogHoursUpdate]
 
   //  implicit val paramWrites: Writes[ReportParams] = (
   //    (JsPath \ "fromDate").write[LocalDate] and
