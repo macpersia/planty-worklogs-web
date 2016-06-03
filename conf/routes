@@ -9,7 +9,8 @@ GET     /initParams 	    controllers.Application.initParams
 # Worklogs
 GET     /worklogs 	        controllers.Application.worklogs
 POST    /worklogs 	        controllers.Application.retrieveWorklogs
-PUT     /worklogHours       controllers.Application.updateWorklogHours
+POST    /jiraWorklogHours   controllers.Application.updateJiraWorklogHours
+PUT     /jiraWorklogHours   controllers.Application.updateJiraWorklogHours
 
 # Map the static resources from the /public folder to the /assets URL path
 GET     /assets/*file 	    controllers.Assets.versioned(path="/public", file: Asset)

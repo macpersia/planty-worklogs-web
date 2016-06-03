@@ -47,7 +47,9 @@ case class WorklogMatch(date: LocalDate,
 case class JiraWorklogHoursUpdate(connConfig: ConnectionConfig,
                                   issueKey: String,
                                   date: LocalDate,
-                                  duration: Double)
+                                  tzOffsetMinutes: Int,
+                                  duration: Double,
+                                  comment: Option[String])
 
 class Application extends Controller {
 
@@ -167,7 +169,7 @@ class Application extends Controller {
       })
   }
 
-  def updateWorklogHours  = Action(BodyParsers.parse.json) { request =>
+  def updateJiraWorklogHours  = Action(BodyParsers.parse.json) { request =>
     val paramsResult = request.body.validate[JiraWorklogHoursUpdate]
     paramsResult.fold(
       errors => {
@@ -177,7 +179,9 @@ class Application extends Controller {
         Logger.info("Updating JIRA worklog: {" +
           s" issueKey: ${params.issueKey}," +
           s" date: ${params.date}," +
+          s" tzOffsetMinutes: ${params.tzOffsetMinutes}," +
           s" duration: ${params.duration} }" +
+          s" comment: ${params.comment} }" +
           s" connConfig: ${params.connConfig} }")
         val jiraReporterMR = managed(new JiraWorklogReporter(
           params.connConfig,
@@ -187,7 +191,13 @@ class Application extends Controller {
         for(jiraReporter <- jiraReporterMR) {
 //          val jiraEntries = reporters(0).retrieveWorklogs()
 //          Ok(Json.obj("status" -> JsString("OK"), "matches" -> pairUp(jiraEntries, null)))
-          jiraReporter.updateWorklogHours(params.issueKey, params.date, params.duration)
+          if (request.method == "PUT")
+            jiraReporter.updateWorklogHours(params.issueKey, params.date, params.duration)
+          else {
+            val tzOffsetSeconds = (-1) * params.tzOffsetMinutes * 60
+            val zone = ZoneOffset.ofTotalSeconds(tzOffsetSeconds).normalized()
+            jiraReporter.createWorklog(params.issueKey, params.date, zone, params.duration, params.comment.get)
+          }
 //
 //        } match {
 //          case Left(errors) =>
@@ -286,7 +296,9 @@ class Application extends Controller {
       (JsPath \ "connConfig").read[ConnectionConfig] and
       (JsPath \ "key").read[String] and
       (JsPath \ "date").read[LocalDate] and
-      (JsPath \ "duration").read[Double]
+      (JsPath \ "tzOffsetMinutes").read[Int] and
+      (JsPath \ "duration").read[Double] and
+      (JsPath \ "comment").readNullable[String]
   ) (JiraWorklogHoursUpdate.apply _)
 
   //  implicit val jiraWorklogHoursUpdateWrites = Json.writes[JiraWorklogHoursUpdate]
