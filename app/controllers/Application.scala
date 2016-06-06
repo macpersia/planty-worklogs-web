@@ -211,8 +211,8 @@ class Application extends Controller {
   val worklogComparator = new Comparator[WorklogEntry] {
     def compare(w1: WorklogEntry, w2: WorklogEntry) = {
       Ordering[(Long, String)].compare(
-        (w1.date.toEpochDay, w1.description),
-        (w2.date.toEpochDay, w2.description)
+        (w1.date.toEpochDay, w1.description.trim.split("\\s+")(0)),
+        (w2.date.toEpochDay, w2.description.trim.split("\\s+")(0))
       )
     }
   }

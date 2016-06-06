@@ -18,5 +18,6 @@ GET     /assets/*file 	    controllers.Assets.versioned(path="/public", file: As
 # Map the webjar static assets to the /webjars URL
 GET     /webjars/*file 	    controllers.WebJarAssets.at(file)
 
-
 #GET    /admin/metrics      com.kenshoo.play.metrics.MetricsController.metrics
+
+GET     /ng/*file 	        controllers.Assets.at(path="/ng2-dist", file)

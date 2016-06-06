@@ -10,3 +10,4 @@ target
 .history
 /bin
 /access-log-*.gz
+/ng2-dist
