@@ -7,7 +7,7 @@ GET     / 		            controllers.Application.index
 GET     /initParams 	    controllers.Application.initParams
 
 # Worklogs
-GET     /worklogs 	        controllers.Application.worklogs
+GET     /worklogs           controllers.Application.worklogs
 POST    /worklogs 	        controllers.Application.retrieveWorklogs
 POST    /jiraWorklogHours   controllers.Application.updateJiraWorklogHours
 PUT     /jiraWorklogHours   controllers.Application.updateJiraWorklogHours
@@ -20,4 +20,5 @@ GET     /webjars/*file 	    controllers.WebJarAssets.at(file)
 
 #GET    /admin/metrics      com.kenshoo.play.metrics.MetricsController.metrics
 
-GET     /ng/*file 	        controllers.Assets.at(path="/ng2-dist", file)
+GET     /ng 	            controllers.Assets.at(path="/public/ng", file="index.html")
+GET     /ng/*file 	        controllers.Assets.at(path="/public/ng", file)
