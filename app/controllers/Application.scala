@@ -8,7 +8,7 @@ import java.util.{Comparator, TimeZone}
 import com.github.macpersia.planty.views.cats.CatsWorklogReporter
 import com.github.macpersia.planty.views.jira
 import com.github.macpersia.planty.views.cats
-import com.github.macpersia.planty.views.jira.{ConnectionConfig, JiraWorklogReporter}
+import com.github.macpersia.planty.views.jira.JiraWorklogReporter
 import com.github.macpersia.planty.views.jira.model.JiraWorklogFilter
 import com.github.macpersia.planty.worklogs.model.{WorklogEntry, WorklogFilter}
 import com.github.macpersia.planty.worklogs.WorklogReporting
@@ -18,6 +18,7 @@ import play.api.libs.json._
 import play.api.mvc._
 import resource._
 import play.api.Logger
+import play.api.libs.functional.FunctionalBuilder
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits._
@@ -44,12 +45,21 @@ case class WorklogMatch(date: LocalDate,
                         durationInJira: Option[Double],
                         durationInCats: Option[Double])
 
-case class JiraWorklogHoursUpdate(connConfig: ConnectionConfig,
+case class JiraWorklogHoursUpdate(connConfig: jira.ConnectionConfig,
                                   issueKey: String,
                                   date: LocalDate,
                                   tzOffsetMinutes: Int,
                                   duration: Double,
                                   comment: Option[String])
+
+case class CatsWorklogHoursUpdate(connConfig: cats.ConnectionConfig,
+                                  issueKey: String,
+                                  date: LocalDate,
+                                  tzOffsetMinutes: Int,
+                                  duration: Double,
+                                  activityId: String,
+                                  orderId: String,
+                                  suborderIdExt: Option[String])
 
 class Application extends Controller {
 
@@ -160,7 +170,7 @@ class Application extends Controller {
             "matches" -> pairUp(
               jiraEntries,
               catsEntries
-          )))
+            )))
         }).either match {
           case Left(errors) =>
             BadRequest(Json.obj("status" -> JsString("KO"), "message" -> errors.head.toString))
@@ -169,7 +179,7 @@ class Application extends Controller {
       })
   }
 
-  def updateJiraWorklogHours  = Action(BodyParsers.parse.json) { request =>
+  def updateJiraWorklogHours = Action(BodyParsers.parse.json) { request =>
     val paramsResult = request.body.validate[JiraWorklogHoursUpdate]
     paramsResult.fold(
       errors => {
@@ -188,9 +198,9 @@ class Application extends Controller {
           // TODO: The following dummy value shoud not be passed!
           JiraWorklogFilter(None, LocalDate.now(), LocalDate.now, TimeZone.getDefault, "")
         ))
-        for(jiraReporter <- jiraReporterMR) {
-//          val jiraEntries = reporters(0).retrieveWorklogs()
-//          Ok(Json.obj("status" -> JsString("OK"), "matches" -> pairUp(jiraEntries, null)))
+        jiraReporterMR.map(jiraReporter => {
+          //          val jiraEntries = reporters(0).retrieveWorklogs()
+          //          Ok(Json.obj("status" -> JsString("OK"), "matches" -> pairUp(jiraEntries, null)))
           if (request.method == "PUT")
             jiraReporter.updateWorklogHours(params.issueKey, params.date, params.duration)
           else {
@@ -198,13 +208,69 @@ class Application extends Controller {
             val zone = ZoneOffset.ofTotalSeconds(tzOffsetSeconds).normalized()
             jiraReporter.createWorklog(params.issueKey, params.date, zone, params.duration, params.comment.get)
           }
-//
-//        } match {
-//          case Left(errors) =>
-//            BadRequest(Json.obj("status" -> JsString("KO"), "message" -> /*errors.head.toString*/ "blabla"))
-//          case Right(result) => result
+          //
+          //        } match {
+          //          case Left(errors) =>
+          //            BadRequest(Json.obj("status" -> JsString("KO"), "message" -> /*errors.head.toString*/ "blabla"))
+          //          case Right(result) => result
+        }).either match {
+          case Left(errors) =>
+            BadRequest(Json.obj("status" -> JsString("KO"), "message" -> errors.head.toString))
+          case Right(status) =>
+            if (status == 200)
+              Ok(Json.obj("status" -> JsString("OK")))
+            else
+              new Status(status)
         }
-        Ok(Json.obj("status" -> JsString("OK")))
+      })
+  }
+
+  def updateCatsWorklogHours = Action(BodyParsers.parse.json) { request =>
+    val paramsResult = request.body.validate[CatsWorklogHoursUpdate]
+    paramsResult.fold(
+      errors => {
+        BadRequest(Json.obj("status" -> JsString("KO"), "message" -> JsError.toJson(errors)))
+      },
+      params => {
+        Logger.info("Updating CATS worklog: {" +
+          s" issueKey: ${params.issueKey}," +
+          s" date: ${params.date}," +
+          s" tzOffsetMinutes: ${params.tzOffsetMinutes}," +
+          s" duration: ${params.duration}," +
+          s" activityId: ${params.activityId}," +
+          s" orderId: ${params.orderId}," +
+          s" suborderIdExt: ${params.suborderIdExt}," +
+          s" connConfig: ${params.connConfig} }")
+        val catsReporterMR = managed(new CatsWorklogReporter(
+          params.connConfig,
+          // TODO: The following dummy value shoud not be passed!
+          new WorklogFilter(None, LocalDate.now(), LocalDate.now, TimeZone.getDefault)
+        ))
+        catsReporterMR.map(catsReporter => {
+          if (request.method == "PUT")
+            catsReporter.updateWorklogHours(params.issueKey, params.date, params.duration)
+          else {
+            val tzOffsetSeconds = (-1) * params.tzOffsetMinutes * 60
+            val zone = ZoneOffset.ofTotalSeconds(tzOffsetSeconds).normalized()
+            val orderId = params.orderId
+            val suborderId = params.suborderIdExt.map(orderId + "-" + _)
+            catsReporter.createWorklog(
+              params.issueKey, params.date, zone, params.duration, params.activityId, orderId, suborderId)
+          }
+          //
+          //        } match {
+          //          case Left(errors) =>
+          //            BadRequest(Json.obj("status" -> JsString("KO"), "message" -> /*errors.head.toString*/ "blabla"))
+          //          case Right(result) => result
+        }).either match {
+          case Left(errors) =>
+            BadRequest(Json.obj("status" -> JsString("KO"), "message" -> errors.head.toString))
+          case Right(status) =>
+            if (status == 200)
+              Ok(Json.obj("status" -> JsString("OK")))
+            else
+              new Status(status)
+        }
       })
   }
 
@@ -283,23 +349,45 @@ class Application extends Controller {
       (dtString => URI.create(dtString))
   )
 
-//  implicit val javaUriWrite = Writes[URI](uri =>
-//    JsString(uri.toString())
-//  )
+  //  implicit val javaUriWrite = Writes[URI](uri =>
+  //    JsString(uri.toString())
+  //  )
 
-  implicit val jiraConnConfigReads = Json.reads[ConnectionConfig]
+  implicit val jiraConnConfigReads = Json.reads[jira.ConnectionConfig]
 
   //  implicit val jiraConnConfigWrite = Json.writes[ConnectionConfig]
 
   //  implicit val jiraWorklogHoursUpdateReads = Json.reads[JiraWorklogHoursUpdate]
   implicit val jiraWorklogHoursUpdateReads: Reads[JiraWorklogHoursUpdate] = (
-      (JsPath \ "connConfig").read[ConnectionConfig] and
+    (JsPath \ "connConfig").read[jira.ConnectionConfig] and
       (JsPath \ "key").read[String] and
       (JsPath \ "date").read[LocalDate] and
       (JsPath \ "tzOffsetMinutes").read[Int] and
       (JsPath \ "duration").read[Double] and
       (JsPath \ "comment").readNullable[String]
-  ) (JiraWorklogHoursUpdate.apply _)
+    ) (JiraWorklogHoursUpdate.apply _)
+
+  implicit val catsConnConfigReads: Reads[cats.ConnectionConfig] = (
+    (JsPath \ "baseUri").read[URI] and
+      (JsPath \ "username").read[String] and
+      (JsPath \ "password").read[String]
+    ) ((uri, user, pass) => cats.ConnectionConfig(uri, user, pass))
+
+  //  implicit val catsConnConfigWrites = Json.writes[cats.ConnectionConfig]
+
+  //  implicit val catsWorklogHoursUpdateWrites = Json.writes[CatsWorklogHoursUpdate]
+  implicit val catsWorklogHoursUpdateReads: Reads[CatsWorklogHoursUpdate] = (
+    (JsPath \ "connConfig").read[cats.ConnectionConfig] and
+      (JsPath \ "key").read[String] and
+      (JsPath \ "date").read[LocalDate] and
+      (JsPath \ "tzOffsetMinutes").read[Int] and
+      (JsPath \ "duration").read[Double] and
+      (JsPath \ "activityId").readNullable[String].map(_.getOrElse("")) and
+      (JsPath \ "orderId").readNullable[String].map(_.getOrElse("")) and
+      (JsPath \ "suborderIdExt").readNullable[String]
+    ) (CatsWorklogHoursUpdate.apply _)
+
+  //  implicit val catsWorklogHoursUpdateReads = Json.reads[CatsWorklogHoursUpdate]
 
   //  implicit val jiraWorklogHoursUpdateWrites = Json.writes[JiraWorklogHoursUpdate]
 
