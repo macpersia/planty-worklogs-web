@@ -17,8 +17,8 @@ libraryDependencies ++= Seq(
   cache,
   ws,
   specs2 % Test,
-  "default" %% "planty-jira-view" % "1.0-SNAPSHOT",
-  "default" %% "planty-cats-view" % "1.0-SNAPSHOT",
+  "default" %% "planty-worklogs-adapter-jira" % "1.0-SNAPSHOT",
+  "default" %% "planty-worklogs-adapter-cats" % "1.0-SNAPSHOT",
   "mysql" % "mysql-connector-java" % "5.1.18",
   "org.webjars" %% "webjars-play" % "2.4.0",
   "org.webjars" % "bootstrap" % "3.3.5",
@@ -26,7 +26,8 @@ libraryDependencies ++= Seq(
   "org.webjars" % "html5shiv" % "3.7.0",
   "org.webjars" % "respond" % "1.4.2",
   "com.kenshoo" %% "metrics-play" % "2.4.0_0.4.1",
-  "com.mohiva" %% "play-silhouette" % "3.0.0",
+  //"com.mohiva" %% "play-silhouette" % "3.0.0",
+  "com.mohiva" %% "play-silhouette" % "3.0.5",
   filters
 )
 
