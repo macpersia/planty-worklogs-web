@@ -10,7 +10,7 @@ Play2WarKeys.servletVersion := "3.1"
 
 lazy val worklogsWeb = (project in file(".")).enablePlugins(PlayScala)
 
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   jdbc,
@@ -33,7 +33,8 @@ libraryDependencies ++= Seq(
 
 resolvers ++= Seq(
   "Atlassian Releases" at "https://maven.atlassian.com/public/",
-  "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
+  "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
+  Resolver.jcenterRepo
 )
 
 // Play provides two styles of routers, one expects its actions to be injected, the
