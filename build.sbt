@@ -2,6 +2,8 @@ import com.github.play2war.plugin._
 
 name := """planty-worklogs-web"""
 
+organization := "planty.be"
+
 version := "1.0-SNAPSHOT"
 
 Play2WarPlugin.play2WarSettings
@@ -17,8 +19,8 @@ libraryDependencies ++= Seq(
   cache,
   ws,
   specs2 % Test,
-  "default" %% "planty-worklogs-adapter-jira" % "1.0-SNAPSHOT",
-  "default" %% "planty-worklogs-adapter-cats" % "1.0-SNAPSHOT",
+  "planty.be" %% "planty-worklogs-adapter-jira" % "1.1-SNAPSHOT",
+  "planty.be" %% "planty-worklogs-adapter-cats" % "1.0-SNAPSHOT",
   "mysql" % "mysql-connector-java" % "5.1.18",
   "org.webjars" %% "webjars-play" % "2.4.0",
   "org.webjars" % "bootstrap" % "3.3.5",
